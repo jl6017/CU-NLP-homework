@@ -49,7 +49,6 @@ def get_ngrams(sequence, n):
         for j in range(n):
             temp.append(sequence[i + j].split(',')[0])
         ngrams.append(tuple(temp))
-
     return ngrams
 
 
@@ -67,7 +66,7 @@ class TrigramModel(object):
         generator = corpus_reader(corpusfile, self.lexicon)
         self.count_ngrams(generator)
 
-        self.total_grams = sum(self.unigramcounts.values())  # included START and END ?
+        self.total_grams = sum(self.unigramcounts.values())  # included START and END
         self.total_sentence = self.unigramcounts[('START',)]
 
     def count_ngrams(self, corpus):
@@ -141,6 +140,7 @@ class TrigramModel(object):
         Generate a random sentence from the trigram model. t specifies the
         max length, but the sentence may be shorter if STOP is reached.
         """
+        # first_word = ["START","START"]
         return
         # return result
 
@@ -156,9 +156,11 @@ class TrigramModel(object):
         bigram = (trigram[1], trigram[2])
         unigram = (trigram[2],)
 
-        return lambda1 * self.raw_trigram_probability(trigram) + \
-               lambda2 * self.raw_bigram_probability(bigram) + \
-               lambda3 * self.raw_unigram_probability(unigram)
+        smooth_p = lambda1 * self.raw_trigram_probability(trigram) + \
+                   lambda2 * self.raw_bigram_probability(bigram) + \
+                   lambda3 * self.raw_unigram_probability(unigram)
+
+        return smooth_p
 
     def sentence_logprob(self, sentence):
         """
@@ -172,8 +174,7 @@ class TrigramModel(object):
             if prob == 0:
                 pass
             else:
-                log_prob = math.log2(prob)
-                sum_prob += log_prob
+                sum_prob += math.log2(prob)
 
         return sum_prob
 
@@ -187,8 +188,9 @@ class TrigramModel(object):
             M += len(sentence)
             sum_p += self.sentence_logprob(sentence)
         l = sum_p / M
+        pp = 2 ** (-l)
 
-        return 2**(-l)
+        return pp
 
 
 def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2):
@@ -217,7 +219,7 @@ def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2)
 
 if __name__ == "__main__":
     print("Argument List:", str(sys.argv))
-    model = TrigramModel(sys.argv[1])
+    # model = TrigramModel(sys.argv[1])
 
     # put test code here...
     # or run the script from the command line with 
@@ -233,8 +235,8 @@ if __name__ == "__main__":
     # print(pp)
 
     # Essay scoring experiment:
-    # acc = essay_scoring_experiment('hw1_data/ets_toefl_data/train_high.txt',
-    #                                'hw1_data/ets_toefl_data/train_low.txt',
-    #                                "hw1_data/ets_toefl_data/test_high",
-    #                                "hw1_data/ets_toefl_data/test_low")
-    # print(acc)
+    acc = essay_scoring_experiment('hw1_data/ets_toefl_data/train_high.txt',
+                                   'hw1_data/ets_toefl_data/train_low.txt',
+                                   "hw1_data/ets_toefl_data/test_high",
+                                   "hw1_data/ets_toefl_data/test_low")
+    print(acc)  # 85%
